@@ -150,6 +150,55 @@ async function crawlSiteHeaders(startUrl) {
   return pages;
 }
 
+async function crawlSiteButtons(startUrl) {
+  const origin = new URL(startUrl).origin;
+  const queue = [stripHash(startUrl)];
+  const visited = new Set();
+  const pages = {};
+
+  while (queue.length) {
+    const current = queue.shift();
+    const normalized = stripHash(new URL(current, origin).href);
+    if (visited.has(normalized)) continue;
+    visited.add(normalized);
+
+    let html = '';
+    try {
+      const res = await fetch(normalized, { credentials: 'include' });
+      html = await res.text();
+    } catch (err) {
+      continue;
+    }
+
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const title = doc.querySelector('title')?.textContent.trim() || normalized;
+    const buttons = [];
+    doc.querySelectorAll('a, button, [role="button"]').forEach(el => {
+      buttons.push({ html: el.outerHTML, href: el.getAttribute('href') || '' });
+    });
+    pages[normalized] = { title, buttons };
+
+    const linkRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>/gi;
+    let linkMatch;
+    while ((linkMatch = linkRegex.exec(html)) !== null) {
+      const href = linkMatch[1];
+      if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('javascript:')) continue;
+      try {
+        const link = stripHash(new URL(href, normalized).href);
+        if (link.startsWith(origin) && !visited.has(link)) {
+          queue.push(link);
+        }
+      } catch (e) {}
+    }
+    chrome.runtime.sendMessage({
+      type: 'crawlProgress',
+      crawled: visited.size,
+      discovered: visited.size + queue.length,
+    });
+  }
+  return pages;
+}
+
 // Also respond to explicit crawl requests from the background/popup
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === 'crawl') {
@@ -163,6 +212,11 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === 'startHeaderQa') {
     crawlSiteHeaders(msg.url).then((pages) => {
       chrome.runtime.sendMessage({ type: 'headerQaResult', pages });
+    });
+  }
+  if (msg && msg.type === 'startButtonQa') {
+    crawlSiteButtons(msg.url).then((pages) => {
+      chrome.runtime.sendMessage({ type: 'buttonQaResult', pages });
     });
   }
 });

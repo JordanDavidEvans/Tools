@@ -49,6 +49,20 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     })();
   }
 
+  // Start a button QA crawl on the current page
+  if (msg && msg.type === 'startButtonQa') {
+    (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab || !tab.id) return;
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'startButtonQa', url: tab.url });
+      } catch (e) {
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+        await chrome.tabs.sendMessage(tab.id, { type: 'startButtonQa', url: tab.url });
+      }
+    })();
+  }
+
   // Content script has finished crawling and sent back results
   if (msg && msg.type === 'imageQaResult') {
     chrome.storage.local.set({ imageQaData: msg.pages }, () => {
@@ -59,6 +73,12 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg && msg.type === 'headerQaResult') {
     chrome.storage.local.set({ headerQaData: msg.pages }, () => {
       chrome.tabs.create({ url: chrome.runtime.getURL('header_results.html') });
+    });
+  }
+
+  if (msg && msg.type === 'buttonQaResult') {
+    chrome.storage.local.set({ buttonQaData: msg.pages }, () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL('button_results.html') });
     });
   }
 
