@@ -109,6 +109,16 @@ const visited = new Set();
 const queue = [];
 const resultsBody = document.querySelector('#results tbody');
 
+const normalize = (u, base) => {
+  try {
+    const url = new URL(u, base);
+    url.hash = '';
+    return url.href;
+  } catch {
+    return u;
+  }
+};
+
 /* Utility helpers */
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 const sameOrigin = (base, link) => {
@@ -119,6 +129,7 @@ const wordCount = txt => txt.trim().split(/\\s+/).filter(Boolean).length;
 
 /* Crawl workflow */
 async function crawl(url) {
+  url = normalize(url);
   visited.add(url);
   const frame = document.createElement('iframe');
   frame.className = 'hidden';
@@ -147,7 +158,7 @@ async function crawl(url) {
     [...doc.links].forEach(a=>{
       const href = a.getAttribute('href');
       if (href && sameOrigin(url, href)) {
-        const abs = new URL(href, url).href;
+        const abs = normalize(href, url);
         if (!visited.has(abs)) { queue.push(abs); }
       }
     });
@@ -176,7 +187,7 @@ function addRow({url,title='',h1='',headings='',wc='',size='',status=''}){
 async function start() {
   const base = document.getElementById('startUrl').value.trim();
   if (!base) return;
-  queue.push(base);
+  queue.push(normalize(base));
   while (queue.length) {
     const next = queue.shift();
     if (!visited.has(next)) await crawl(next);
@@ -222,13 +233,13 @@ function imageQaForm() {
 
 async function crawlSite(startUrl) {
   const origin = new URL(startUrl).origin;
-  const queue = [startUrl];
+  const queue = [stripHash(startUrl)];
   const visited = new Set();
   const pages = {};
 
   while (queue.length) {
     const current = queue.shift();
-    const normalized = new URL(current).href;
+    const normalized = stripHash(new URL(current).href);
     if (visited.has(normalized)) continue;
     visited.add(normalized);
 
@@ -244,7 +255,7 @@ async function crawlSite(startUrl) {
     while ((imgMatch = imgRegex.exec(html)) !== null) {
       const tag = imgMatch[0];
       const src = imgMatch[1];
-      const imgUrl = new URL(src, normalized).href;
+      const imgUrl = stripHash(new URL(src, normalized).href);
       const altMatch = tag.match(/alt=["']([^"']*)["']/i);
       const alt = altMatch ? altMatch[1] : '';
       let size = 0;
@@ -263,7 +274,7 @@ async function crawlSite(startUrl) {
     while ((linkMatch = linkRegex.exec(html)) !== null) {
       const href = linkMatch[1];
       if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('javascript:')) continue;
-      const link = new URL(href, normalized).href;
+      const link = stripHash(new URL(href, normalized).href);
       if (link.startsWith(origin) && !visited.has(link)) {
         queue.push(link);
       }
@@ -318,6 +329,15 @@ function stripTags(str) {
   return str.replace(/<[^>]*>/g, '').trim();
 }
 
+function stripHash(url) {
+  try {
+    const u = new URL(url);
+    u.hash = '';
+    return u.href;
+  } catch {
+    return url;
+  }
+}
 
 function formatSize(n) {
   if (n > 1024 * 1024) return (n/1024/1024).toFixed(2) + ' MB';

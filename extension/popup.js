@@ -5,7 +5,6 @@ const output = document.getElementById('output');
 const crawlBtn = document.getElementById('crawl');
 const runImageQaBtn = document.getElementById('runImageQa');
 const runHeaderQaBtn = document.getElementById('runHeaderQa');
-const siteInput = document.getElementById('siteUrl');
 const progress = document.getElementById('progress');
 
 const buildDate = new Date(BUILD_DATE);
@@ -46,13 +45,9 @@ crawlBtn.addEventListener('click', () => {
 });
 
 runImageQaBtn.addEventListener('click', () => {
-  const url = siteInput.value.trim();
-  if (!url) return;
-  chrome.runtime.sendMessage({ type: 'startImageQa', url });
+  chrome.runtime.sendMessage({ type: 'startImageQa' });
 });
 
 runHeaderQaBtn.addEventListener('click', () => {
-  const url = siteInput.value.trim();
-  if (!url) return;
-  chrome.runtime.sendMessage({ type: 'startHeaderQa', url });
+  chrome.runtime.sendMessage({ type: 'startHeaderQa' });
 });
