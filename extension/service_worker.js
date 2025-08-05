@@ -2,8 +2,6 @@
 // Handles communication between popup and content scripts
 // and optionally forwards data to a Cloudflare Worker endpoint.
 
-let crawlTabId = null;
-
 // Handle messages from popup and content scripts
 chrome.runtime.onMessage.addListener((msg, sender) => {
   // Popup requests a crawl of the current active tab
@@ -23,32 +21,31 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     })();
   }
 
-  // Start an image QA crawl using the local browser
+  // Start an image QA crawl on the current page
   if (msg && msg.type === 'startImageQa') {
     (async () => {
-      const tab = await chrome.tabs.create({ url: msg.url });
-      crawlTabId = tab.id;
-      const listener = (tabId, info) => {
-        if (tabId === tab.id && info.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(listener);
-          chrome.tabs.sendMessage(tab.id, { type: 'startImageQa', url: msg.url });
-        }
-      };
-      chrome.tabs.onUpdated.addListener(listener);
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab || !tab.id) return;
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'startImageQa', url: tab.url });
+      } catch (e) {
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+        await chrome.tabs.sendMessage(tab.id, { type: 'startImageQa', url: tab.url });
+      }
     })();
   }
 
+  // Start a header QA crawl on the current page
   if (msg && msg.type === 'startHeaderQa') {
     (async () => {
-      const tab = await chrome.tabs.create({ url: msg.url });
-      crawlTabId = tab.id;
-      const listener = (tabId, info) => {
-        if (tabId === tab.id && info.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(listener);
-          chrome.tabs.sendMessage(tab.id, { type: 'startHeaderQa', url: msg.url });
-        }
-      };
-      chrome.tabs.onUpdated.addListener(listener);
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab || !tab.id) return;
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'startHeaderQa', url: tab.url });
+      } catch (e) {
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+        await chrome.tabs.sendMessage(tab.id, { type: 'startHeaderQa', url: tab.url });
+      }
     })();
   }
 
@@ -57,20 +54,12 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     chrome.storage.local.set({ imageQaData: msg.pages }, () => {
       chrome.tabs.create({ url: chrome.runtime.getURL('image_results.html') });
     });
-    if (crawlTabId) {
-      chrome.tabs.remove(crawlTabId);
-      crawlTabId = null;
-    }
   }
 
   if (msg && msg.type === 'headerQaResult') {
     chrome.storage.local.set({ headerQaData: msg.pages }, () => {
       chrome.tabs.create({ url: chrome.runtime.getURL('header_results.html') });
     });
-    if (crawlTabId) {
-      chrome.tabs.remove(crawlTabId);
-      crawlTabId = null;
-    }
   }
 
   // Content script has sent back the page data

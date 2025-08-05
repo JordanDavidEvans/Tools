@@ -28,15 +28,25 @@ function sendData() {
 window.addEventListener('load', sendData);
 
 // Crawl an entire site by fetching each internal page and gathering image data.
+function stripHash(u) {
+  try {
+    const url = new URL(u);
+    url.hash = '';
+    return url.href;
+  } catch {
+    return u;
+  }
+}
+
 async function crawlSite(startUrl) {
   const origin = new URL(startUrl).origin;
-  const queue = [startUrl];
+  const queue = [stripHash(startUrl)];
   const visited = new Set();
   const pages = {};
 
   while (queue.length) {
     const current = queue.shift();
-    const normalized = new URL(current, origin).href;
+    const normalized = stripHash(new URL(current, origin).href);
     if (visited.has(normalized)) continue;
     visited.add(normalized);
 
@@ -57,7 +67,7 @@ async function crawlSite(startUrl) {
     while ((imgMatch = imgRegex.exec(html)) !== null) {
       const tag = imgMatch[0];
       const src = imgMatch[1];
-      const imgUrl = new URL(src, normalized).href;
+      const imgUrl = stripHash(new URL(src, normalized).href);
       const altMatch = tag.match(/alt=["']([^"']*)["']/i);
       const alt = altMatch ? altMatch[1] : '';
       let size = 0;
@@ -75,7 +85,7 @@ async function crawlSite(startUrl) {
       const href = linkMatch[1];
       if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('javascript:')) continue;
       try {
-        const link = new URL(href, normalized).href;
+        const link = stripHash(new URL(href, normalized).href);
         if (link.startsWith(origin) && !visited.has(link)) {
           queue.push(link);
         }
@@ -96,13 +106,13 @@ function stripTags(str) {
 
 async function crawlSiteHeaders(startUrl) {
   const origin = new URL(startUrl).origin;
-  const queue = [startUrl];
+  const queue = [stripHash(startUrl)];
   const visited = new Set();
   const pages = {};
 
   while (queue.length) {
     const current = queue.shift();
-    const normalized = new URL(current, origin).href;
+    const normalized = stripHash(new URL(current, origin).href);
     if (visited.has(normalized)) continue;
     visited.add(normalized);
 
@@ -130,12 +140,12 @@ async function crawlSiteHeaders(startUrl) {
       const href = linkMatch[1];
       if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('javascript:')) continue;
       try {
-        const link = new URL(href, normalized).href;
+        const link = stripHash(new URL(href, normalized).href);
         if (link.startsWith(origin) && !visited.has(link)) {
           queue.push(link);
         }
       } catch (e) {}
-    }
+  }
   }
   return pages;
 }
