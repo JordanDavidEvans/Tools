@@ -4,33 +4,35 @@ Cloudflare Worker scripts providing a hub for QA tooling. The main entry
 point is `worker.js` which serves a landing page with links to available
 tools.
 
+## Chrome Extension
+
+The Image QA Tool and Header QA Crawler now rely on a companion Chrome
+extension. When you visit `/image-qa` or `/qa-crawler` the worker attempts to
+communicate with the extension. If it is not installed you will be prompted to
+add it.
+
+### Install the extension
+
+1. Download this repository from [GitHub](https://github.com/jordan-evans/Tools)
+   (use **Code → Download ZIP**).
+2. Unzip the archive and locate the `extension` folder.
+3. In Chrome, open `chrome://extensions`, enable **Developer mode**, click
+   **Load unpacked**, and select the `extension` folder.
+
+Once installed, the extension will handle crawling tasks and open result pages
+in new tabs.
+
 ## Image QA Tool
 
-Navigate to `/image-qa` to use the image quality assurance utility. After
-entering a website URL, the worker crawls all internal links, gathers the
-images on each page, and sorts them by file size. A numeric input allows QA
-engineers to highlight images above a chosen threshold (1 KB–100 MB) for
-review. Each page is labeled with its `<title>` text and every image displays
-its file size and `alt` text.
+Navigate to `/image-qa` and enter a website URL. If the extension is available
+it will crawl the site for images and display results. Without the extension
+the page will prompt you to install it.
 
-### Usage
+## Header QA Crawler
 
-Once deployed, visit `https://<your-worker>/image-qa?url=https://example.com`
-to crawl a site and display its images. Use the size input at the top of the
-results page to highlight files above a given threshold.
-
-## Client-side QA Crawler
-
-Navigate to `/qa-crawler` to gather basic page metadata directly in the
-browser. The worker serves a self-contained page that loads each internal link
-in a hidden iframe, extracts the title, meta description, H1–H3 headings, and
-word count, and displays the results in a table. Because the crawling runs in
-the client, DOM access is limited to same-origin pages and sites with strict
-CORS or `X-Frame-Options` headers may return empty data or 403 errors.
-
-### Usage
-
-Visit `https://<your-worker>/qa-crawler`, enter a base URL, and click **Start**.
+Visit `/qa-crawler` to gather heading information across a site. The page sends
+the request to the extension, which performs the crawl and shows results in a
+separate tab. If the extension is missing you will be asked to install it.
 
 ### Local Development
 
