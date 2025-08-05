@@ -43,6 +43,5 @@ crawlBtn.addEventListener('click', () => {
 runImageQaBtn.addEventListener('click', () => {
   const url = siteInput.value.trim();
   if (!url) return;
-  const target = `https://qa-tools-worker.jordan-evans.workers.dev/image-qa?url=${encodeURIComponent(url)}`;
-  chrome.tabs.create({ url: target });
+  chrome.runtime.sendMessage({ type: 'startImageQa', url });
 });
