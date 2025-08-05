@@ -6,6 +6,7 @@
   <style>
     .image { margin:10px; display:inline-block; }
     .image img { width:200px; height:200px; object-fit:cover; display:block; }
+    .image.oversize { outline:3px solid red; }
     #pageIndicator {
       position:fixed;
       top:10px;
@@ -21,6 +22,7 @@
 </head>
 <body>
   <h1>Image QA Result</h1>
+  <label>Highlight images above (KB): <input type="number" id="sizeInput" min="1" max="102400" value="1"></label>
   <div id="results"></div>
   <script src="image_results.js"></script>
 </body>

@@ -86,15 +86,18 @@ function qaCrawlerPage() {
 
 <input id="startUrl" size="50" placeholder="https://example.com">
 <button id="startBtn">Start</button>
+<input id="sizeFilter" type="number" placeholder="Min bytes">
+<button id="filterBtn">Filter</button>
 
 <table id="results">
   <thead>
     <tr>
       <th>URL</th>
       <th>Title</th>
-      <th>Meta description</th>
+      <th>H1</th>
       <th>H1–H3</th>
       <th>Word count</th>
+      <th>HTML Size</th>
       <th>Status</th>
     </tr>
   </thead>
@@ -135,9 +138,10 @@ async function crawl(url) {
     if (!doc) throw new Error('No DOM access (probably cross-origin)');
 
     const title = doc.title || '';
-    const metaDesc = doc.querySelector('meta[name="description"]')?.content || '';
+    const h1 = doc.querySelector('h1')?.textContent.trim() || '';
     const headings = [...doc.querySelectorAll('h1,h2,h3')].map(h=>h.textContent.trim()).join(' | ');
     const wc = wordCount(doc.body.innerText || '');
+    const size = doc.documentElement.outerHTML.length;
 
     /* enqueue internal links */
     [...doc.links].forEach(a=>{
@@ -148,7 +152,7 @@ async function crawl(url) {
       }
     });
 
-    addRow({url, title, metaDesc, headings, wc, status:'OK'});
+    addRow({url, title, h1, headings, wc, size, status:'OK'});
   } catch(err) {
     addRow({url, status:err.message});
   } finally {
@@ -156,13 +160,15 @@ async function crawl(url) {
   }
 }
 
-function addRow({url,title='',metaDesc='',headings='',wc='',status=''}){
+function addRow({url,title='',h1='',headings='',wc='',size='',status=''}){
   const tr = document.createElement('tr');
+  tr.dataset.size = size;
   tr.innerHTML = \`<td>\${url}</td>
                   <td>\${title}</td>
-                  <td>\${metaDesc}</td>
+                  <td>\${h1}</td>
                   <td>\${headings}</td>
                   <td>\${wc}</td>
+                  <td>\${size}</td>
                   <td>\${status}</td>\`;
   resultsBody.appendChild(tr);
 }
@@ -181,6 +187,13 @@ async function start() {
 }
 
 document.getElementById('startBtn').onclick = start;
+document.getElementById('filterBtn').onclick = () => {
+  const min = parseInt(document.getElementById('sizeFilter').value, 10) || 0;
+  [...resultsBody.children].forEach(row => {
+    const s = parseInt(row.dataset.size, 10) || 0;
+    row.style.display = s >= min ? '' : 'none';
+  });
+};
 </script>
 
 <!--
