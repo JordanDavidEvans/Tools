@@ -1,9 +1,3 @@
-function formatSize(n) {
-  if (n > 1024 * 1024) return (n / 1024 / 1024).toFixed(2) + ' MB';
-  if (n > 1024) return (n / 1024).toFixed(2) + ' KB';
-  return n + ' B';
-}
-
 function escapeHtml(str) {
   return str.replace(/[&<>"']/g, (c) => ({
     '&': '&amp;',
@@ -37,8 +31,8 @@ chrome.storage.local.get('imageQaData').then(({ imageQaData }) => {
     for (const img of data.images) {
       const div = document.createElement('div');
       div.className = 'image';
-      div.dataset.size = img.size;
-      div.innerHTML = `<img src="${img.url}" alt="${escapeHtml(img.alt)}" loading="lazy"><br><span>${formatSize(img.size)}</span><br><em>Alt: ${escapeHtml(img.alt)}</em>`;
+      // Display the image using its direct URL without downloading it in advance.
+      div.innerHTML = `<img src="${img.url}" alt="${escapeHtml(img.alt)}" loading="lazy"><br><em>Alt: ${escapeHtml(img.alt)}</em>`;
       container.appendChild(div);
     }
   }
@@ -59,16 +53,6 @@ chrome.storage.local.get('imageQaData').then(({ imageQaData }) => {
   }
   window.addEventListener('scroll', updateIndicator);
   updateIndicator();
-
-  const input = document.getElementById('sizeInput');
-  function update() {
-    const threshold = Number(input.value) * 1024;
-    document.querySelectorAll('.image').forEach((el) => {
-      el.classList.toggle('oversize', Number(el.dataset.size) > threshold);
-    });
-  }
-  input.addEventListener('input', update);
-  update();
 
   chrome.storage.local.remove('imageQaData');
 });
