@@ -41,9 +41,78 @@ function sendData() {
 // Automatically crawl once the page has fully loaded
 window.addEventListener('load', sendData);
 
+// Crawl an entire site by fetching each internal page and gathering image data.
+async function crawlSite(startUrl) {
+  const origin = new URL(startUrl).origin;
+  const queue = [startUrl];
+  const visited = new Set();
+  const pages = {};
+
+  while (queue.length) {
+    const current = queue.shift();
+    const normalized = new URL(current, origin).href;
+    if (visited.has(normalized)) continue;
+    visited.add(normalized);
+
+    let html = '';
+    try {
+      const res = await fetch(normalized, { credentials: 'include' });
+      html = await res.text();
+    } catch (err) {
+      continue;
+    }
+
+    const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+    const title = titleMatch ? stripTags(titleMatch[1]) : normalized;
+
+    const images = [];
+    const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    let imgMatch;
+    while ((imgMatch = imgRegex.exec(html)) !== null) {
+      const tag = imgMatch[0];
+      const src = imgMatch[1];
+      const imgUrl = new URL(src, normalized).href;
+      const altMatch = tag.match(/alt=["']([^"']*)["']/i);
+      const alt = altMatch ? altMatch[1] : '';
+      let size = 0;
+      try {
+        const head = await fetch(imgUrl, { method: 'HEAD' });
+        size = parseInt(head.headers.get('content-length')) || 0;
+      } catch (err) {}
+      images.push({ url: imgUrl, alt, size });
+    }
+
+    images.sort((a, b) => b.size - a.size);
+    pages[normalized] = { title, images };
+
+    const linkRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>/gi;
+    let linkMatch;
+    while ((linkMatch = linkRegex.exec(html)) !== null) {
+      const href = linkMatch[1];
+      if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('javascript:')) continue;
+      try {
+        const link = new URL(href, normalized).href;
+        if (link.startsWith(origin) && !visited.has(link)) {
+          queue.push(link);
+        }
+      } catch (e) {}
+    }
+  }
+  return pages;
+}
+
+function stripTags(str) {
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
 // Also respond to explicit crawl requests from the background/popup
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === 'crawl') {
     sendData();
+  }
+  if (msg && msg.type === 'startImageQa') {
+    crawlSite(msg.url).then((pages) => {
+      chrome.runtime.sendMessage({ type: 'imageQaResult', pages });
+    });
   }
 });
