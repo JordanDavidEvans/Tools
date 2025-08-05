@@ -77,17 +77,18 @@ function imageCompressorPage() {
 <style>
  body {font-family:sans-serif;margin:1rem;}
  #preview {max-width:100%;margin-top:1rem;}
+ #download {display:none;}
 </style>
 </head>
 <body>
 <h1>Image Compression Tool</h1>
-<p>Select an image and choose a quality level to convert it to JPEG.</p>
+<p>Select an image and choose a quality level to convert it to JPEG. Images will be resized to a maximum of 1920x1080 while maintaining a 16:9 aspect ratio and will download automatically.</p>
 <input type="file" id="fileInput" accept="image/*">
 <label>Quality: <input type="range" id="quality" min="1" max="100" value="80"></label>
 <button id="compressBtn">Compress</button>
 <br>
 <img id="preview">
-<a id="download" download="compressed.jpg">Download</a>
+<a id="download" download="compressed.jpg"></a>
 <script>
 const fileInput = document.getElementById('fileInput');
 const qualityInput = document.getElementById('quality');
@@ -101,14 +102,27 @@ document.getElementById('compressBtn').addEventListener('click', () => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      const targetRatio = 16 / 9;
+      let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+      if (img.width / img.height > targetRatio) {
+        sHeight = img.height;
+        sWidth = img.height * targetRatio;
+        sx = (img.width - sWidth) / 2;
+      } else {
+        sWidth = img.width;
+        sHeight = img.width / targetRatio;
+        sy = (img.height - sHeight) / 2;
+      }
+      const scale = Math.min(1920 / sWidth, 1080 / sHeight, 1);
+      canvas.width = Math.round(sWidth * scale);
+      canvas.height = Math.round(sHeight * scale);
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(blob => {
         const url = URL.createObjectURL(blob);
         preview.src = url;
         download.href = url;
+        download.click();
       }, 'image/jpeg', Number(qualityInput.value)/100);
     };
     img.src = e.target.result;
