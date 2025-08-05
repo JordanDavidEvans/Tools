@@ -5,6 +5,7 @@ const output = document.getElementById('output');
 const crawlBtn = document.getElementById('crawl');
 const runImageQaBtn = document.getElementById('runImageQa');
 const runHeaderQaBtn = document.getElementById('runHeaderQa');
+const runButtonQaBtn = document.getElementById('runButtonQa');
 const progress = document.getElementById('progress');
 
 const buildDate = new Date(BUILD_DATE);
@@ -50,4 +51,8 @@ runImageQaBtn.addEventListener('click', () => {
 
 runHeaderQaBtn.addEventListener('click', () => {
   chrome.runtime.sendMessage({ type: 'startHeaderQa' });
+});
+
+runButtonQaBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ type: 'startButtonQa' });
 });
