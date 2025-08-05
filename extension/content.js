@@ -176,7 +176,22 @@ async function crawlSiteButtons(startUrl) {
     doc.querySelectorAll('a, button, [role="button"]').forEach(el => {
       buttons.push({ html: el.outerHTML, href: el.getAttribute('href') || '' });
     });
-    pages[normalized] = { title, buttons };
+
+    const styles = [];
+    doc.querySelectorAll('style').forEach(styleEl => {
+      styles.push(styleEl.textContent);
+    });
+    for (const linkEl of doc.querySelectorAll('link[rel="stylesheet"]')) {
+      const href = linkEl.getAttribute('href');
+      if (!href) continue;
+      try {
+        const cssUrl = new URL(href, normalized).href;
+        const res = await fetch(cssUrl, { credentials: 'include' });
+        styles.push(await res.text());
+      } catch (e) {}
+    }
+
+    pages[normalized] = { title, buttons, styles };
 
     const linkRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>/gi;
     let linkMatch;
