@@ -10,6 +10,12 @@ async function handleRequest(request) {
     });
   }
 
+  if (url.pathname === '/qa-crawler') {
+    return new Response(qaCrawlerPage(), {
+      headers: { 'content-type': 'text/html;charset=UTF-8' }
+    });
+  }
+
   if (url.pathname === '/image-qa') {
     const target = url.searchParams.get('url');
     if (!target) {
@@ -41,7 +47,139 @@ function homePage() {
 <h1>QA Tools Hub</h1>
 <ul>
   <li><a href="/image-qa">Image QA Tool</a></li>
+  <li><a href="/qa-crawler">Client-side QA Crawler</a></li>
 </ul>
+</body>
+</html>`;
+}
+
+function qaCrawlerPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Client-side QA crawler</title>
+<style>
+ body {font-family:sans-serif;margin:1rem;}
+ iframe.hidden {display:none;}
+ table {border-collapse:collapse;margin-top:1rem;width:100%;}
+ th,td {border:1px solid #ccc;padding:.5rem;text-align:left;font-size:.9rem;}
+</style>
+</head>
+<body>
+<h1>QA crawler (browser only)</h1>
+<p>
+  Enter a base URL and click <em>Start</em>.  
+  The script loads pages in hidden iframes so the browser handles cookies/session just like a user.
+  <br><strong>Limit:</strong> DOM access is only possible for same-origin pages. If the target uses CORS or bot protection, results may be empty or 403.
+  Opening the site in a normal tab first may set cookies that allow the iframe loads to succeed.
+</p>
+
+<input id="startUrl" size="50" placeholder="https://example.com">
+<button id="startBtn">Start</button>
+
+<table id="results">
+  <thead>
+    <tr>
+      <th>URL</th>
+      <th>Title</th>
+      <th>Meta description</th>
+      <th>H1–H3</th>
+      <th>Word count</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const visited = new Set();
+const queue = [];
+const resultsBody = document.querySelector('#results tbody');
+
+/* Utility helpers */
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+const sameOrigin = (base, link) => {
+  try {return new URL(link, base).origin === new URL(base).origin;}
+  catch {return false;}
+};
+const wordCount = txt => txt.trim().split(/\\s+/).filter(Boolean).length;
+
+/* Crawl workflow */
+async function crawl(url) {
+  visited.add(url);
+  const frame = document.createElement('iframe');
+  frame.className = 'hidden';
+  frame.src = url;
+  document.body.appendChild(frame);
+
+  try {
+    await new Promise((res, rej) => {
+      frame.onload = res;
+      frame.onerror = () => rej(new Error('load error'));
+    });
+
+    /* wait for potential client-side rendering */
+    await sleep(1200);
+
+    const doc = frame.contentDocument;
+    if (!doc) throw new Error('No DOM access (probably cross-origin)');
+
+    const title = doc.title || '';
+    const metaDesc = doc.querySelector('meta[name="description"]')?.content || '';
+    const headings = [...doc.querySelectorAll('h1,h2,h3')].map(h=>h.textContent.trim()).join(' | ');
+    const wc = wordCount(doc.body.innerText || '');
+
+    /* enqueue internal links */
+    [...doc.links].forEach(a=>{
+      const href = a.getAttribute('href');
+      if (href && sameOrigin(url, href)) {
+        const abs = new URL(href, url).href;
+        if (!visited.has(abs)) { queue.push(abs); }
+      }
+    });
+
+    addRow({url, title, metaDesc, headings, wc, status:'OK'});
+  } catch(err) {
+    addRow({url, status:err.message});
+  } finally {
+    frame.remove();
+  }
+}
+
+function addRow({url,title='',metaDesc='',headings='',wc='',status=''}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = \`<td>\${url}</td>
+                  <td>\${title}</td>
+                  <td>\${metaDesc}</td>
+                  <td>\${headings}</td>
+                  <td>\${wc}</td>
+                  <td>\${status}</td>\`;
+  resultsBody.appendChild(tr);
+}
+
+async function start() {
+  const base = document.getElementById('startUrl').value.trim();
+  if (!base) return;
+  queue.push(base);
+  while (queue.length) {
+    const next = queue.shift();
+    if (!visited.has(next)) await crawl(next);
+  }
+  if (!resultsBody.children.length) {
+    addRow({url:base,status:'No data – possibly blocked by CORS/403'});
+  }
+}
+
+document.getElementById('startBtn').onclick = start;
+</script>
+
+<!--
+CORS / cross-tab notes:
+* Access to iframe DOM is allowed only when the iframe’s origin matches this page.
+* If the target site requires authentication or session cookies, opening it in a regular tab first can establish the session so iframe requests succeed.
+* To analyze pages on a different origin, a cooperating script/extension would need to run in that tab and postMessage its DOM back.
+-->
 </body>
 </html>`;
 }
