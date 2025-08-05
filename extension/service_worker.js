@@ -61,4 +61,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
       body: JSON.stringify(msg.data),
     }).catch((err) => console.error('Reporting failed', err));
   }
+  if (msg && msg.type === 'crawlProgress') {
+    chrome.runtime.sendMessage(msg);
+  }
 });
