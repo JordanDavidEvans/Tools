@@ -16,6 +16,12 @@ async function handleRequest(request) {
     });
   }
 
+  if (url.pathname === '/image-compressor') {
+    return new Response(imageCompressorPage(), {
+      headers: { 'content-type': 'text/html;charset=UTF-8' }
+    });
+  }
+
     if (url.pathname === '/image-qa') {
       const target = url.searchParams.get('url');
       if (!target) {
@@ -57,7 +63,59 @@ function homePage() {
 <ul>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/image-qa">Image QA Tool</a></li>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/qa-crawler">Client-side QA Crawler</a></li>
+  <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/image-compressor">Image Compression Tool</a></li>
 </ul>
+</body>
+</html>`;
+}
+
+function imageCompressorPage() {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<title>Image Compression Tool</title>
+<style>
+ body {font-family:sans-serif;margin:1rem;}
+ #preview {max-width:100%;margin-top:1rem;}
+</style>
+</head>
+<body>
+<h1>Image Compression Tool</h1>
+<p>Select an image and choose a quality level to convert it to JPEG.</p>
+<input type="file" id="fileInput" accept="image/*">
+<label>Quality: <input type="range" id="quality" min="1" max="100" value="80"></label>
+<button id="compressBtn">Compress</button>
+<br>
+<img id="preview">
+<a id="download" download="compressed.jpg">Download</a>
+<script>
+const fileInput = document.getElementById('fileInput');
+const qualityInput = document.getElementById('quality');
+const preview = document.getElementById('preview');
+const download = document.getElementById('download');
+document.getElementById('compressBtn').addEventListener('click', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        preview.src = url;
+        download.href = url;
+      }, 'image/jpeg', Number(qualityInput.value)/100);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+</script>
 </body>
 </html>`;
 }
