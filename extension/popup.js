@@ -4,6 +4,7 @@ const BUILD_DATE = '__BUILD_DATE__';
 const output = document.getElementById('output');
 const crawlBtn = document.getElementById('crawl');
 const runImageQaBtn = document.getElementById('runImageQa');
+const runHeaderQaBtn = document.getElementById('runHeaderQa');
 const siteInput = document.getElementById('siteUrl');
 const progress = document.getElementById('progress');
 
@@ -48,4 +49,10 @@ runImageQaBtn.addEventListener('click', () => {
   const url = siteInput.value.trim();
   if (!url) return;
   chrome.runtime.sendMessage({ type: 'startImageQa', url });
+});
+
+runHeaderQaBtn.addEventListener('click', () => {
+  const url = siteInput.value.trim();
+  if (!url) return;
+  chrome.runtime.sendMessage({ type: 'startHeaderQa', url });
 });

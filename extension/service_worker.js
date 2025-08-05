@@ -38,10 +38,34 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     })();
   }
 
+  if (msg && msg.type === 'startHeaderQa') {
+    (async () => {
+      const tab = await chrome.tabs.create({ url: msg.url });
+      crawlTabId = tab.id;
+      const listener = (tabId, info) => {
+        if (tabId === tab.id && info.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          chrome.tabs.sendMessage(tab.id, { type: 'startHeaderQa', url: msg.url });
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+    })();
+  }
+
   // Content script has finished crawling and sent back results
   if (msg && msg.type === 'imageQaResult') {
     chrome.storage.local.set({ imageQaData: msg.pages }, () => {
       chrome.tabs.create({ url: chrome.runtime.getURL('image_results.html') });
+    });
+    if (crawlTabId) {
+      chrome.tabs.remove(crawlTabId);
+      crawlTabId = null;
+    }
+  }
+
+  if (msg && msg.type === 'headerQaResult') {
+    chrome.storage.local.set({ headerQaData: msg.pages }, () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL('header_results.html') });
     });
     if (crawlTabId) {
       chrome.tabs.remove(crawlTabId);
