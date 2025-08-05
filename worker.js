@@ -16,25 +16,34 @@ async function handleRequest(request) {
     });
   }
 
-  if (url.pathname === '/image-qa') {
-    const target = url.searchParams.get('url');
-    if (!target) {
-      return new Response(imageQaForm(), {
-        headers: { 'content-type': 'text/html;charset=UTF-8' }
-      });
+    if (url.pathname === '/image-qa') {
+      const target = url.searchParams.get('url');
+      if (!target) {
+        return new Response(imageQaForm(), {
+          headers: {
+            'content-type': 'text/html;charset=UTF-8',
+            'access-control-allow-origin': '*'
+          }
+        });
+      }
+      try {
+        const pages = await crawlSite(target);
+        return new Response(renderImages(pages), {
+          headers: {
+            'content-type': 'text/html;charset=UTF-8',
+            'access-control-allow-origin': '*'
+          }
+        });
+      } catch (e) {
+        return new Response(`<p>Error: ${escapeHtml(e.message)}</p>`, {
+          status: 500,
+          headers: {
+            'content-type': 'text/html;charset=UTF-8',
+            'access-control-allow-origin': '*'
+          }
+        });
+      }
     }
-    try {
-      const pages = await crawlSite(target);
-      return new Response(renderImages(pages), {
-        headers: { 'content-type': 'text/html;charset=UTF-8' }
-      });
-    } catch (e) {
-      return new Response(`<p>Error: ${escapeHtml(e.message)}</p>`, {
-        status: 500,
-        headers: { 'content-type': 'text/html;charset=UTF-8' }
-      });
-    }
-  }
 
   return new Response('Not found', { status: 404 });
 }
@@ -46,8 +55,8 @@ function homePage() {
 <body>
 <h1>QA Tools Hub</h1>
 <ul>
-  <li><a href="/image-qa">Image QA Tool</a></li>
-  <li><a href="/qa-crawler">Client-side QA Crawler</a></li>
+  <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/image-qa">Image QA Tool</a></li>
+  <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/qa-crawler">Client-side QA Crawler</a></li>
 </ul>
 </body>
 </html>`;
@@ -190,7 +199,7 @@ function imageQaForm() {
 <head><title>Image QA Tool</title></head>
 <body>
 <h1>Image QA Tool</h1>
-<form>
+<form action="https://qa-tools-worker.jordan-evans.workers.dev/image-qa">
   <input type="url" name="url" placeholder="https://example.com" required>
   <button type="submit">Crawl</button>
 </form>
@@ -213,8 +222,8 @@ async function crawlSite(startUrl) {
     const res = await fetch(normalized);
     const html = await res.text();
 
-    const h1Match = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
-    const title = h1Match ? stripTags(h1Match[1]) : normalized;
+      const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+      const title = titleMatch ? stripTags(titleMatch[1]) : normalized;
 
     const images = [];
     const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
@@ -261,9 +270,8 @@ function renderImages(pages) {
 </style>
 </head>
 <body>
-<h1>Image QA Result</h1>
-<label>Highlight images above: <span id="sizeLabel">1 KB</span></label>
-<input type="range" id="sizeSlider" min="1024" max="104857600" value="1024" step="1024">
+  <h1>Image QA Result</h1>
+  <label>Highlight images above (KB): <input type="number" id="sizeInput" min="1" max="102400" value="1"></label>
 `;
 
   for (const [pageUrl, data] of Object.entries(pages)) {
@@ -278,18 +286,15 @@ function renderImages(pages) {
   }
 
   html += `<script>
-const slider = document.getElementById('sizeSlider');
-const label = document.getElementById('sizeLabel');
-function format(n){if(n>1024*1024)return (n/1024/1024).toFixed(2)+' MB';if(n>1024)return (n/1024).toFixed(2)+' KB';return n+' B';}
-function update(){
-  const threshold = Number(slider.value);
-  label.textContent = format(threshold);
-  document.querySelectorAll('.image').forEach(el=>{
-    el.classList.toggle('oversize', Number(el.dataset.size) > threshold);
-  });
-}
-slider.addEventListener('input', update);
-update();
+  const input = document.getElementById('sizeInput');
+  function update(){
+    const threshold = Number(input.value) * 1024;
+    document.querySelectorAll('.image').forEach(el=>{
+      el.classList.toggle('oversize', Number(el.dataset.size) > threshold);
+    });
+  }
+  input.addEventListener('input', update);
+  update();
 </script>
 </body>
 </html>`;

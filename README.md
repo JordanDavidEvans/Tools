@@ -8,15 +8,15 @@ tools.
 
 Navigate to `/image-qa` to use the image quality assurance utility. After
 entering a website URL, the worker crawls all internal links, gathers the
-images on each page, and sorts them by file size. A slider allows QA
+images on each page, and sorts them by file size. A numeric input allows QA
 engineers to highlight images above a chosen threshold (1 KB–100 MB) for
-review. Each page is labeled with its `<h1>` text and every image displays
+review. Each page is labeled with its `<title>` text and every image displays
 its file size and `alt` text.
 
 ### Usage
 
 Once deployed, visit `https://<your-worker>/image-qa?url=https://example.com`
-to crawl a site and display its images. Use the size slider at the top of the
+to crawl a site and display its images. Use the size input at the top of the
 results page to highlight files above a given threshold.
 
 ## Client-side QA Crawler
