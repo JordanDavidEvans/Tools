@@ -74,15 +74,9 @@ async function crawlSite(startUrl) {
       const imgUrl = new URL(src, normalized).href;
       const altMatch = tag.match(/alt=["']([^"']*)["']/i);
       const alt = altMatch ? altMatch[1] : '';
-      let size = 0;
-      try {
-        const head = await fetch(imgUrl, { method: 'HEAD' });
-        size = parseInt(head.headers.get('content-length')) || 0;
-      } catch (err) {}
-      images.push({ url: imgUrl, alt, size });
+      // Only record the image URL and alt text; do not fetch the image.
+      images.push({ url: imgUrl, alt });
     }
-
-    images.sort((a, b) => b.size - a.size);
     pages[normalized] = { title, images };
 
     const linkRegex = /<a[^>]*href=["']([^"']+)["'][^>]*>/gi;
