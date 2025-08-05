@@ -97,6 +97,11 @@ async function crawlSite(startUrl) {
         }
       } catch (e) {}
     }
+    chrome.runtime.sendMessage({
+      type: 'crawlProgress',
+      crawled: visited.size,
+      discovered: visited.size + queue.length,
+    });
   }
   return pages;
 }

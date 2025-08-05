@@ -5,6 +5,7 @@ const output = document.getElementById('output');
 const crawlBtn = document.getElementById('crawl');
 const runImageQaBtn = document.getElementById('runImageQa');
 const siteInput = document.getElementById('siteUrl');
+const progress = document.getElementById('progress');
 
 const buildDate = new Date(BUILD_DATE);
 document.getElementById('buildDate').textContent = isNaN(buildDate) ? 'unknown' : buildDate.toLocaleDateString();
@@ -32,6 +33,9 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === 'pageData') {
     display(msg.data);
     reportToWorker(msg.data); // Optional reporting
+  }
+  if (msg && msg.type === 'crawlProgress') {
+    progress.textContent = `Crawled ${msg.crawled} / Discovered ${msg.discovered}`;
   }
 });
 
