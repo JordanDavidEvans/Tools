@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     chrome.runtime.sendMessage(msg);
 
     // Optionally report to a Cloudflare Worker endpoint
-    fetch('https://your-worker.workers.dev/api/report', {
+    fetch('https://qa-tools-worker.jordan-evans.workers.dev/api/report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(msg.data),

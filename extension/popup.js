@@ -1,7 +1,13 @@
 // Popup script: sends crawl requests and displays results.
 
+const BUILD_DATE = '__BUILD_DATE__';
 const output = document.getElementById('output');
 const crawlBtn = document.getElementById('crawl');
+const runImageQaBtn = document.getElementById('runImageQa');
+const siteInput = document.getElementById('siteUrl');
+
+const buildDate = new Date(BUILD_DATE);
+document.getElementById('buildDate').textContent = isNaN(buildDate) ? 'unknown' : buildDate.toLocaleDateString();
 
 // Display the JSON data in the popup
 function display(data) {
@@ -11,7 +17,7 @@ function display(data) {
 // Optionally send the data to a Cloudflare Worker endpoint
 async function reportToWorker(data) {
   try {
-    await fetch('https://your-worker.workers.dev/api/report', {
+    await fetch('https://qa-tools-worker.jordan-evans.workers.dev/api/report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -32,4 +38,11 @@ chrome.runtime.onMessage.addListener((msg) => {
 // Trigger crawling of the active tab
 crawlBtn.addEventListener('click', () => {
   chrome.runtime.sendMessage({ type: 'crawlPage' });
+});
+
+runImageQaBtn.addEventListener('click', () => {
+  const url = siteInput.value.trim();
+  if (!url) return;
+  const target = `https://qa-tools-worker.jordan-evans.workers.dev/image-qa?url=${encodeURIComponent(url)}`;
+  chrome.tabs.create({ url: target });
 });
