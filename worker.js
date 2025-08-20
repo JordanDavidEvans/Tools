@@ -205,11 +205,21 @@ async function crawlForKeywords(targetUrl, keywords, origin, seen = []) {
     return { url: targetUrl, error: err.message };
   }
 
-  const lower = html.toLowerCase();
   const matches = {};
   for (const kw of keywords) {
-    const pattern = new RegExp(kw.toLowerCase(), 'g');
-    matches[kw] = (lower.match(pattern) || []).length;
+    const regex = new RegExp(escapeRegExp(kw), 'gi');
+    let m;
+    const occurrences = [];
+    while ((m = regex.exec(html)) !== null) {
+      const index = m.index;
+      const line = html.slice(0, index).split(/\n/).length;
+      const column = index - html.lastIndexOf('\n', index - 1);
+      const start = Math.max(0, index - 20);
+      const end = Math.min(html.length, index + m[0].length + 20);
+      const context = html.slice(start, end);
+      occurrences.push({ line, column, context });
+    }
+    matches[kw] = occurrences;
   }
 
   const linkRegex = /href=["']([^"'#]+)["']/g;
@@ -256,14 +266,37 @@ function keywordCrawlerPage() {
 <input id="startUrl" size="50" placeholder="https://example.com" type="url">
 <input id="keywords" size="30" placeholder="keyword1, keyword2">
 <button id="startBtn">Start</button>
-<pre id="result"></pre>
+<div id="result"></div>
 <script>
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+}
+function render(node) {
+  let html = '<div><strong>' + escapeHtml(node.url) + '</strong>';
+  for (const kw in node.matches) {
+    const occ = node.matches[kw];
+    if (occ.length) {
+      html += '<div>Keyword "' + escapeHtml(kw) + '":<ul>';
+      for (const o of occ) {
+        html += '<li>Line ' + o.line + ', column ' + o.column + ': ' + escapeHtml(o.context) + '</li>';
+      }
+      html += '</ul></div>';
+    }
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      html += render(child);
+    }
+  }
+  html += '</div>';
+  return html;
+}
 document.getElementById('startBtn').addEventListener('click', async () => {
   const url = document.getElementById('startUrl').value;
   const keywords = document.getElementById('keywords').value;
   const res = await fetch('/keyword-crawler?url=' + encodeURIComponent(url) + '&keywords=' + encodeURIComponent(keywords));
   const data = await res.json();
-  document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+  document.getElementById('result').innerHTML = render(data);
 });
 </script>
 </body>
@@ -271,4 +304,8 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 }
 function escapeHtml(str) {
   return str.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[-\/\^$*+?.()|[\]{}]/g, '\\$&');
 }
