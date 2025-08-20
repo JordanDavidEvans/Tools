@@ -37,7 +37,8 @@ async function handleRequest(request) {
       const origin = url.searchParams.get('origin') || new URL(target).origin;
       const seenParam = url.searchParams.get('seen');
       const seen = seenParam ? JSON.parse(atob(seenParam)) : [];
-      const result = await crawlForKeywords(target, keywords, origin, seen);
+      const workerBase = new URL(request.url).origin;
+      const result = await crawlForKeywords(target, keywords, origin, seen, workerBase);
       return new Response(JSON.stringify(result), {
         headers: { 'content-type': 'application/json' }
       });
@@ -190,13 +191,16 @@ document.getElementById('startBtn').addEventListener('click', () => {
 </html>`;
 }
 
-const WORKER_BASE = 'https://qa-tools-worker.jordan-evans.workers.dev';
-
-async function crawlForKeywords(targetUrl, keywords, origin, seen = []) {
+async function crawlForKeywords(targetUrl, keywords, origin, seen = [], workerBase) {
   seen.push(targetUrl);
   let html = '';
   try {
-    const res = await fetch(targetUrl, { headers: { 'Accept': 'text/html' } });
+    const res = await fetch(targetUrl, {
+      headers: {
+        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (compatible; KeywordCrawler/1.0; +https://example.com/bot)'
+      }
+    });
     if (!res.ok) {
       return { url: targetUrl, error: res.status };
     }
@@ -239,7 +243,9 @@ async function crawlForKeywords(targetUrl, keywords, origin, seen = []) {
 
   const newSeen = seen.concat(links);
   const encodedSeen = encodeURIComponent(btoa(JSON.stringify(newSeen)));
-  const childPromises = links.map(link => fetch(`${WORKER_BASE}/keyword-crawler?url=${encodeURIComponent(link)}&keywords=${encodeURIComponent(keywords.join(','))}&origin=${encodeURIComponent(origin)}&seen=${encodedSeen}`));
+  const childPromises = links.map(link =>
+    fetch(`${workerBase}/keyword-crawler?url=${encodeURIComponent(link)}&keywords=${encodeURIComponent(keywords.join(','))}&origin=${encodeURIComponent(origin)}&seen=${encodedSeen}`)
+  );
 
   const children = [];
   for (const p of childPromises) {
