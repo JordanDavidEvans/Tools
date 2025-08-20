@@ -38,7 +38,8 @@ separate tab. If the extension is missing you will be asked to install it.
 
 Navigate to `/keyword-crawler` to scan a site for specific keywords. Provide a
 starting URL and a comma-separated list of keywords. The worker recursively
-crawls the site's HTML pages, searching for the keywords on each page.
+crawls the site's HTML pages, searching for the keywords on each page. Results
+include the page URL and the line and column where each keyword appears.
 
 ### Local Development
 
