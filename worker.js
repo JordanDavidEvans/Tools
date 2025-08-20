@@ -29,6 +29,24 @@ async function handleRequest(request) {
     });
   }
 
+  if (url.pathname === '/keyword-crawler') {
+    const target = url.searchParams.get('url');
+    const keywordsParam = url.searchParams.get('keywords');
+    if (target && keywordsParam) {
+      const keywords = keywordsParam.split(',').map(k => k.trim()).filter(Boolean);
+      const origin = url.searchParams.get('origin') || new URL(target).origin;
+      const seenParam = url.searchParams.get('seen');
+      const seen = seenParam ? JSON.parse(atob(seenParam)) : [];
+      const result = await crawlForKeywords(target, keywords, origin, seen);
+      return new Response(JSON.stringify(result), {
+        headers: { 'content-type': 'application/json' }
+      });
+    }
+    return new Response(keywordCrawlerPage(), {
+      headers: { 'content-type': 'text/html;charset=UTF-8' }
+    });
+  }
+
   return new Response('Not found', { status: 404 });
 }
 
@@ -42,6 +60,7 @@ function homePage() {
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/image-qa">Image QA Tool</a></li>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/qa-crawler">Client-side QA Crawler</a></li>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/image-compressor">Image Compression Tool</a></li>
+  <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/keyword-crawler">Keyword Search Crawler</a></li>
 </ul>
 </body>
 </html>`;
@@ -165,6 +184,86 @@ document.getElementById('startBtn').addEventListener('click', () => {
   } else {
     document.getElementById('status').innerHTML = 'Chrome extension not detected. Download it from <a href="https://github.com/jordan-evans/Tools">GitHub</a>, unzip it, then load the "extension" folder via chrome://extensions using "Load unpacked".';
   }
+});
+</script>
+</body>
+</html>`;
+}
+
+const WORKER_BASE = 'https://qa-tools-worker.jordan-evans.workers.dev';
+
+async function crawlForKeywords(targetUrl, keywords, origin, seen = []) {
+  seen.push(targetUrl);
+  let html = '';
+  try {
+    const res = await fetch(targetUrl, { headers: { 'Accept': 'text/html' } });
+    if (!res.ok) {
+      return { url: targetUrl, error: res.status };
+    }
+    html = await res.text();
+  } catch (err) {
+    return { url: targetUrl, error: err.message };
+  }
+
+  const lower = html.toLowerCase();
+  const matches = {};
+  for (const kw of keywords) {
+    const pattern = new RegExp(kw.toLowerCase(), 'g');
+    matches[kw] = (lower.match(pattern) || []).length;
+  }
+
+  const linkRegex = /href=["']([^"'#]+)["']/g;
+  const links = [];
+  let match;
+  while ((match = linkRegex.exec(html)) !== null) {
+    try {
+      const u = new URL(match[1], targetUrl);
+      if (u.origin === origin) {
+        const normalized = u.href.split('#')[0];
+        if (!seen.includes(normalized)) {
+          links.push(normalized);
+        }
+      }
+    } catch {}
+  }
+
+  const newSeen = seen.concat(links);
+  const encodedSeen = encodeURIComponent(btoa(JSON.stringify(newSeen)));
+  const childPromises = links.map(link => fetch(`${WORKER_BASE}/keyword-crawler?url=${encodeURIComponent(link)}&keywords=${encodeURIComponent(keywords.join(','))}&origin=${encodeURIComponent(origin)}&seen=${encodedSeen}`));
+
+  const children = [];
+  for (const p of childPromises) {
+    try {
+      const r = await p;
+      if (r.ok) {
+        children.push(await r.json());
+      }
+    } catch {}
+  }
+
+  return { url: targetUrl, matches, children };
+}
+
+function keywordCrawlerPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Keyword Search Crawler</title>
+</head>
+<body>
+<h1>Keyword Search Crawler</h1>
+<input id="startUrl" size="50" placeholder="https://example.com" type="url">
+<input id="keywords" size="30" placeholder="keyword1, keyword2">
+<button id="startBtn">Start</button>
+<pre id="result"></pre>
+<script>
+document.getElementById('startBtn').addEventListener('click', async () => {
+  const url = document.getElementById('startUrl').value;
+  const keywords = document.getElementById('keywords').value;
+  const res = await fetch('/keyword-crawler?url=' + encodeURIComponent(url) + '&keywords=' + encodeURIComponent(keywords));
+  const data = await res.json();
+  document.getElementById('result').textContent = JSON.stringify(data, null, 2);
 });
 </script>
 </body>

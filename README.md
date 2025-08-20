@@ -34,6 +34,12 @@ Visit `/qa-crawler` to gather heading information across a site. The page sends
 the request to the extension, which performs the crawl and shows results in a
 separate tab. If the extension is missing you will be asked to install it.
 
+## Keyword Search Crawler
+
+Navigate to `/keyword-crawler` to scan a site for specific keywords. Provide a
+starting URL and a comma-separated list of keywords. The worker recursively
+crawls the site's HTML pages, searching for the keywords on each page.
+
 ### Local Development
 
 Install [Wrangler](https://github.com/cloudflare/wrangler) and start a
