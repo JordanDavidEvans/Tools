@@ -1,5 +1,5 @@
 html,body{height:100%;margin:0;}
-body{color:#fff;}
-#stars{position:fixed;top:0;left:0;width:100%;height:100%;background:#000 url('https://www.script-tutorials.com/demos/360/images/stars.png') repeat;z-index:-1;animation:moveStars 60s linear infinite;}
+body{color:#fff;display:flex;align-items:center;justify-content:center;background:#000;}
+#stars{position:fixed;top:0;left:0;width:100%;height:100%;background:#000 url('https://www.script-tutorials.com/demos/360/images/stars.png') repeat;z-index:0;animation:moveStars 60s linear infinite;}
 @keyframes moveStars{from{background-position:0 0;}to{background-position:-10000px 10000px;}}
-.content{background:navy;min-height:100%;padding:1rem;}
+.content{position:relative;z-index:1;background:navy;padding:1rem 2rem;border-radius:8px;max-width:800px;margin:2rem auto;}
