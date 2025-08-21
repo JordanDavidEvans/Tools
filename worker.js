@@ -158,7 +158,7 @@ function start(url){
     chrome.runtime.sendMessage({type:'startImageQa', url});
     document.getElementById('status').textContent = 'Extension detected. Results will open in a new tab.';
   } else {
-    document.getElementById('status').innerHTML = 'Chrome extension not detected. Download it from <a href="https://github.com/jordan-evans/Tools">GitHub</a>, unzip it, then load the "extension" folder via chrome://extensions using "Load unpacked".';
+    document.getElementById('status').innerHTML = 'Chrome extension not detected. Download it from <a href="https://github.com/JordanDavidEvans/Tools/archive/refs/heads/main.zip">GitHub</a>, unzip it, then load the "extension" folder via chrome://extensions using "Load unpacked".';
   }
 }
 document.getElementById('qaForm').addEventListener('submit', e => {
@@ -190,7 +190,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
     chrome.runtime.sendMessage({type:'startHeaderQa', url});
     document.getElementById('status').textContent = 'Extension detected. Results will open in a new tab.';
   } else {
-    document.getElementById('status').innerHTML = 'Chrome extension not detected. Download it from <a href="https://github.com/jordan-evans/Tools">GitHub</a>, unzip it, then load the "extension" folder via chrome://extensions using "Load unpacked".';
+    document.getElementById('status').innerHTML = 'Chrome extension not detected. Download it from <a href="https://github.com/JordanDavidEvans/Tools/archive/refs/heads/main.zip">GitHub</a>, unzip it, then load the "extension" folder via chrome://extensions using "Load unpacked".';
   }
 });
 </script>
