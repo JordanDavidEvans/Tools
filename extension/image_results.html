@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Image QA Result</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
     .image { margin:10px; display:inline-block; }
     .image img { width:200px; height:200px; object-fit:cover; display:block; }
@@ -21,9 +22,12 @@
   </style>
 </head>
 <body>
+  <div id="stars"></div>
+  <div class="content">
   <h1>Image QA Result</h1>
   <label>Highlight images above (KB): <input type="number" id="sizeInput" min="1" max="102400" value="1"></label>
   <div id="results"></div>
   <script src="image_results.js"></script>
+  </div>
 </body>
 </html>

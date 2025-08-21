@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Header Structure Result</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
     .page { margin-bottom: 2rem; }
     .h1 { color: red; }
@@ -11,10 +12,13 @@
   </style>
 </head>
 <body>
+  <div id="stars"></div>
+  <div class="content">
   <h1>Header Structure Result</h1>
   <label>Min HTML size (bytes): <input type="number" id="sizeFilter" min="0"></label>
   <button id="applyFilter">Filter</button>
   <div id="results"></div>
   <script src="header_results.js"></script>
+  </div>
 </body>
 </html>

@@ -57,11 +57,22 @@ async function handleRequest(request) {
   return new Response('Not found', { status: 404 });
 }
 
+const commonHead = `
+<style>
+html,body{height:100%;margin:0;}
+body{color:#fff;}
+#stars{position:fixed;top:0;left:0;width:100%;height:100%;background:#000 url('https://www.script-tutorials.com/demos/360/images/stars.png') repeat;z-index:-1;animation:moveStars 60s linear infinite;}
+@keyframes moveStars{from{background-position:0 0;}to{background-position:-10000px 10000px;}}
+.content{background:navy;min-height:100%;padding:1rem;}
+</style>`;
+
 function homePage() {
   return `<!DOCTYPE html>
 <html>
-<head><title>QA Tools Hub</title></head>
+<head><title>QA Tools Hub</title>${commonHead}</head>
 <body>
+<div id="stars"></div>
+<div class="content">
 <h1>QA Tools Hub</h1>
 <ul>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/image-qa">Image QA Tool</a></li>
@@ -70,6 +81,7 @@ function homePage() {
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/keyword-crawler">Keyword Search Crawler</a></li>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/bookmarks">Bookmarklets</a></li>
 </ul>
+</div>
 </body>
 </html>`;
 }
@@ -79,6 +91,7 @@ function imageCompressorPage() {
 <html>
 <head>
 <title>Image Compression Tool</title>
+${commonHead}
 <style>
  body {font-family:sans-serif;margin:1rem;}
  #preview {max-width:100%;margin-top:1rem;}
@@ -86,6 +99,8 @@ function imageCompressorPage() {
 </style>
 </head>
 <body>
+<div id="stars"></div>
+<div class="content">
 <h1>Image Compression Tool</h1>
 <p>Select an image and choose a quality level to convert it to JPEG. Images will be resized to a maximum of 1920x1080 while maintaining a 16:9 aspect ratio and will download automatically.</p>
 <input type="file" id="fileInput" accept="image/*">
@@ -135,6 +150,7 @@ document.getElementById('compressBtn').addEventListener('click', () => {
   reader.readAsDataURL(file);
 });
 </script>
+</div>
 </body>
 </html>`;
 }
@@ -144,8 +160,10 @@ function imageQaPage(target = '') {
   const escaped = escapeHtml(target);
   return `<!DOCTYPE html>
 <html>
-<head><title>Image QA Tool</title></head>
+<head><title>Image QA Tool</title>${commonHead}</head>
 <body>
+<div id="stars"></div>
+<div class="content">
 <h1>Image QA Tool</h1>
 <form id="qaForm">
   <input type="url" id="urlInput" placeholder="https://example.com" value="${escaped}" required>
@@ -167,6 +185,7 @@ document.getElementById('qaForm').addEventListener('submit', e => {
 });
 ${target ? `start('${escaped}');` : ''}
 </script>
+</div>
 </body>
 </html>`;
 }
@@ -176,9 +195,11 @@ function qaCrawlerPage() {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Header QA Crawler</title>
+<title>Header QA Crawler</title>${commonHead}
 </head>
 <body>
+<div id="stars"></div>
+<div class="content">
 <h1>Header QA Crawler</h1>
 <input id="startUrl" size="50" placeholder="https://example.com" type="url">
 <button id="startBtn">Start</button>
@@ -194,6 +215,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
   }
 });
 </script>
+</div>
 </body>
 </html>`;
 }
@@ -272,9 +294,11 @@ function keywordCrawlerPage() {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Keyword Search Crawler</title>
+<title>Keyword Search Crawler</title>${commonHead}
 </head>
 <body>
+<div id="stars"></div>
+<div class="content">
 <h1>Keyword Search Crawler</h1>
 <input id="startUrl" size="50" placeholder="https://example.com" type="url">
 <input id="keywords" size="30" placeholder="keyword1, keyword2">
@@ -312,6 +336,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   document.getElementById('result').innerHTML = render(data);
 });
 </script>
+</div>
 </body>
   </html>`;
 }
@@ -333,13 +358,16 @@ function bookmarksPage() {
   const links = scripts.map(s => `<li><a href="javascript:${encodeURIComponent(s.code)}">${s.name}</a></li>`).join('\n');
   return `<!DOCTYPE html>
 <html>
-<head><title>Bookmarklets</title></head>
+<head><title>Bookmarklets</title>${commonHead}</head>
 <body>
+<div id="stars"></div>
+<div class="content">
 <h1>Bookmarklets</h1>
 <p>Drag the links below to your bookmarks bar and click them on any page.</p>
 <ul>
 ${links}
 </ul>
+</div>
 </body>
 </html>`;
 }
