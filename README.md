@@ -13,8 +13,8 @@ add it.
 
 ### Install the extension
 
-1. Download this repository from [GitHub](https://github.com/jordan-evans/Tools)
-   (use **Code → Download ZIP**).
+1. Download this repository from [GitHub](https://github.com/JordanDavidEvans/Tools)
+   (use **Code → Download ZIP** or [download the ZIP directly](https://github.com/JordanDavidEvans/Tools/archive/refs/heads/main.zip)).
 2. Unzip the archive and locate the `extension` folder.
 3. In Chrome, open `chrome://extensions`, enable **Developer mode**, click
    **Load unpacked**, and select the `extension` folder.
