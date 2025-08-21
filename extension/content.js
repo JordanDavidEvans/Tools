@@ -214,6 +214,22 @@ async function crawlSiteButtons(startUrl) {
   return pages;
 }
 
+function collectLinksOnPage() {
+  const origin = location.origin;
+  const groups = {};
+  document.querySelectorAll('a[href]').forEach((a) => {
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('javascript:')) return;
+    try {
+      const url = new URL(href, location.href).href;
+      if (!groups[url]) groups[url] = [];
+      groups[url].push(a.textContent.trim());
+    } catch (e) {}
+  });
+  const links = Object.entries(groups).map(([url, texts]) => ({ url, texts }));
+  return { origin, links };
+}
+
 // Also respond to explicit crawl requests from the background/popup
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === 'crawl') {
@@ -233,5 +249,9 @@ chrome.runtime.onMessage.addListener((msg) => {
     crawlSiteButtons(msg.url).then((pages) => {
       chrome.runtime.sendMessage({ type: 'buttonQaResult', pages });
     });
+  }
+  if (msg && msg.type === 'startLinkQa') {
+    const data = collectLinksOnPage();
+    chrome.runtime.sendMessage({ type: 'linkQaResult', data });
   }
 });
