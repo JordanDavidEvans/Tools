@@ -48,6 +48,12 @@ async function handleRequest(request) {
     });
   }
 
+  if (url.pathname === '/bookmarks') {
+    return new Response(bookmarksPage(), {
+      headers: { 'content-type': 'text/html;charset=UTF-8' }
+    });
+  }
+
   return new Response('Not found', { status: 404 });
 }
 
@@ -62,6 +68,7 @@ function homePage() {
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/qa-crawler">Client-side QA Crawler</a></li>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/image-compressor">Image Compression Tool</a></li>
   <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/keyword-crawler">Keyword Search Crawler</a></li>
+  <li><a href="https://qa-tools-worker.jordan-evans.workers.dev/bookmarks">Bookmarklets</a></li>
 </ul>
 </body>
 </html>`;
@@ -305,6 +312,34 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   document.getElementById('result').innerHTML = render(data);
 });
 </script>
+</body>
+  </html>`;
+}
+function bookmarksPage() {
+  const scripts = [
+    {
+      name: 'Show Form Success',
+      code: `(()=>{const successMessages=document.querySelectorAll('.dmform-success');successMessages.forEach(el=>{el.style.display='block';console.log('✅ Showing .dmform-success element:',el);});const form=document.querySelector('form.dmRespDesignRow');if(form){form.style.display='none';console.log('✅ Hiding form:',form);}else{console.warn('❌ Could not find form.dmRespDesignRow');}if(successMessages.length>0){successMessages[0].scrollIntoView({behavior:'smooth',block:'center'});}})();`
+    },
+    {
+      name: 'Log Current URL',
+      code: `(()=>{console.log('Current URL:',location.href);})();`
+    },
+    {
+      name: 'Toggle Dark Mode',
+      code: `(()=>{document.body.style.filter=document.body.style.filter?'':'invert(1) hue-rotate(180deg)';})();`
+    }
+  ];
+  const links = scripts.map(s => `<li><a href="javascript:${encodeURIComponent(s.code)}">${s.name}</a></li>`).join('\n');
+  return `<!DOCTYPE html>
+<html>
+<head><title>Bookmarklets</title></head>
+<body>
+<h1>Bookmarklets</h1>
+<p>Drag the links below to your bookmarks bar and click them on any page.</p>
+<ul>
+${links}
+</ul>
 </body>
 </html>`;
 }
